@@ -23,8 +23,7 @@
     "preview": "vite preview",
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build",
-    "init-msw": "msw init public/",
-    "chromatic": "npx chromatic --project-token=chpt_9ed4bd978932b51"
+    "init-msw": "msw init public/"
   },
   "devDependencies": {
     "@eslint/js": "^9.9.0",
