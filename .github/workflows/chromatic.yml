@@ -23,7 +23,7 @@ jobs:
           projectToken: ${{ secrets.CHROMATIC_PROJECT_TOKEN }}
           buildScriptName: build:chromatic-storybook
       - name: Install action dependencies
-        run: cd .github/actions/chromatic && yarn install --frozen-lockfile
+        run: cd .github/actions/chromatic && yarn install --immutable
       - name: Manage PR comments
         if: success() && github.event_name == 'pull_request'
         uses: ./.github/actions/chromatic
