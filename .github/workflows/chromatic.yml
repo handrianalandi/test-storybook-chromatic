@@ -21,3 +21,11 @@ jobs:
         with:
           projectToken: ${{ secrets.CHROMATIC_PROJECT_TOKEN }}
           buildScriptName: build:chromatic-storybook
+      - name: Manage PR comments
+        if: success() && github.event_name == 'pull_request'
+        uses: ./.github/actions/chromatic
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          storybook-url: ${{ steps.chromatic.outputs.storybookUrl }}
+          build-url: ${{ steps.chromatic.outputs.buildUrl }}
+
