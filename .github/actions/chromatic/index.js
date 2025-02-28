@@ -1,6 +1,6 @@
 const github = require("@actions/github");
 const core = require("@actions/core");
-const { updatePRComment, updatePRDescription } = require("./utils/chromatic-pr-util");
+const { updatePRComment, updatePRDescription } = require("./utils/chromatic-pr.util");
 
 async function run() {
   try {
