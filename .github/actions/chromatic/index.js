@@ -1,6 +1,9 @@
 const github = require("@actions/github");
 const core = require("@actions/core");
-const { updatePRComment, updatePRDescription } = require("./utils/chromatic-pr.util");
+const {
+  updatePrComment,
+  updatePrDescription,
+} = require("./utils/chromatic-pr.util");
 
 async function run() {
   try {
@@ -21,8 +24,14 @@ async function run() {
     const octokit = github.getOctokit(token);
 
     try {
-      await updatePRComment(octokit, context, prNumber, storybookUrl, buildUrl);
-      await updatePRDescription(octokit, context, prNumber, storybookUrl, buildUrl);
+      await updatePrComment(octokit, context, prNumber, storybookUrl, buildUrl);
+      await updatePrDescription(
+        octokit,
+        context,
+        prNumber,
+        storybookUrl,
+        buildUrl
+      );
     } catch (error) {
       core.warning(`Failed to manage PR comments: ${error.message}`);
       throw error;

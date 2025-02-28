@@ -1,11 +1,8 @@
-const github = require("@actions/github");
-const core = require("@actions/core");
-
 const COMMENT_IDENTIFIER = "<!-- CHROMATIC-STORYBOOK-COMMENT -->";
 const CHROMATIC_START_MARKER = "<!-- CHROMATIC-DESCRIPTION-START -->";
 const CHROMATIC_END_MARKER = "<!-- CHROMATIC-DESCRIPTION-END -->";
 
-async function updatePRComment(
+async function updatePrComment(
   octokit,
   context,
   prNumber,
@@ -48,7 +45,7 @@ async function updatePRComment(
   console.log(`Created new comment ID ${newComment.id}`);
 }
 
-async function updatePRDescription(
+async function updatePrDescription(
   octokit,
   context,
   prNumber,
@@ -96,6 +93,6 @@ async function updatePRDescription(
 }
 
 module.exports = {
-  updatePRComment,
-  updatePRDescription,
+  updatePrComment,
+  updatePrDescription,
 };
