@@ -1,51 +1,51 @@
-import * as core from "@actions/core";
-import * as github from "@actions/github";
-import {
-  updatePrComment,
-  updatePrDescription,
-} from "./utils/chromatic-pr.util";
+import * as core from '@actions/core';
+import * as github from '@actions/github';
+import { Context } from '@actions/github/lib/context';
 
-async function run(): Promise<void> {
+import { updatePrComment, updatePrDescription, UpdatePrParams } from './utils/chromatic-pr.util';
+
+interface PullRequestPayload {
+  pull_request: {
+    number: number;
+  } | null;
+}
+
+async function run() {
   try {
-    const token = core.getInput("github-token", { required: true });
-    const storybookUrl = core.getInput("storybook-url", { required: true });
-    const buildUrl = core.getInput("build-url", { required: true });
+    // Input validation
+    const token = core.getInput('github-token', { required: true });
+    const storybookUrl = core.getInput('storybook-url', { required: true });
+    const buildUrl = core.getInput('build-url', { required: true });
 
-    const context = github.context;
+    const context = github.context as Context & { payload: PullRequestPayload };
 
+    // Check if we're in a PR context
     if (!context.payload.pull_request) {
-      console.log("No PR context found. Skipping comment creation.");
+      // eslint-disable-next-line no-console
+      console.log('No PR context found. Skipping comment creation.');
       return;
     }
 
     const prNumber = context.issue.number;
     const octokit = github.getOctokit(token);
 
-    const params = {
+    const params: UpdatePrParams = {
       octokit,
       context,
       prNumber,
       storybookUrl,
-      buildUrl,
+      buildUrl
     };
 
     try {
       await updatePrComment(params);
       await updatePrDescription(params);
     } catch (error) {
-      core.warning(
-        `Failed to manage PR updates: ${
-          error instanceof Error ? error.message : "Unknown error"
-        }`
-      );
+      core.warning(`Failed to manage PR updates: ${error instanceof Error ? error.message : 'Unknown error'}`);
       throw error;
     }
   } catch (error) {
-    core.setFailed(
-      `Action failed: ${
-        error instanceof Error ? error.message : "Unknown error"
-      }`
-    );
+    core.setFailed(`Action failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 }
 

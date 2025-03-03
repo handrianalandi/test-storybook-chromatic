@@ -1,15 +1,21 @@
-import { getOctokit } from "@actions/github";
-import { Context } from "@actions/github/lib/context";
+import { getOctokit } from '@actions/github';
+import { Context } from '@actions/github/lib/context';
 
-const MARKERS = {
-  COMMENT: "<!-- CHROMATIC-STORYBOOK-COMMENT -->",
-  DESCRIPTION: {
-    START: "<!-- CHROMATIC-DESCRIPTION-START -->",
-    END: "<!-- CHROMATIC-DESCRIPTION-END -->",
-  },
-} as const;
+const COMMENT_IDENTIFIER = '<!-- CHROMATIC-STORYBOOK-COMMENT -->';
+const CHROMATIC_START_MARKER = '<!-- CHROMATIC-DESCRIPTION-START -->';
+const CHROMATIC_END_MARKER = '<!-- CHROMATIC-DESCRIPTION-END -->';
 
 type GitHubClient = ReturnType<typeof getOctokit>;
+
+// Add these new type definitions
+type IssueComment = {
+  id: number;
+  body?: string;
+};
+
+type PullRequest = {
+  body: string | null;
+};
 
 interface UpdatePrParams {
   octokit: GitHubClient;
@@ -19,85 +25,87 @@ interface UpdatePrParams {
   buildUrl: string;
 }
 
-async function updatePrComment({
-  octokit,
-  context,
-  prNumber,
-  storybookUrl,
-  buildUrl,
-}: UpdatePrParams): Promise<void> {
-  const commentBody = `${MARKERS.COMMENT}
-✅ Storybook has been successfully deployed!
+async function updatePrComment(params: UpdatePrParams): Promise<void> {
+  const { octokit, context, prNumber, storybookUrl, buildUrl } = params;
 
-📚 **Storybook URL**: [View Storybook](${storybookUrl})
+  const commentBody =
+    `${COMMENT_IDENTIFIER}\n` +
+    `✅ Storybook has been successfully deployed!\n\n` +
+    `📚 **Storybook URL**: [View Storybook](${storybookUrl})\n\n` +
+    `🛠️ **Build URL**: [View Build](${buildUrl})`;
 
-🛠️ **Build URL**: [View Build](${buildUrl})`;
+  // Get all comments on the PR
+  const { data: comments } = (await octokit.rest.issues.listComments({
+    owner: context.repo.owner,
+    repo: context.repo.repo,
+    issue_number: prNumber
+  })) as { data: IssueComment[] };
 
-  const { data: comments } = await octokit.rest.issues.listComments({
-    ...context.repo,
-    issue_number: prNumber,
-  });
-
+  // Find and delete any previous Chromatic comments
   for (const comment of comments) {
-    if (comment.body?.includes(MARKERS.COMMENT)) {
+    if (comment.body?.includes(COMMENT_IDENTIFIER)) {
+      // eslint-disable-next-line no-console
       console.log(`Deleting previous comment ID ${comment.id}`);
       await octokit.rest.issues.deleteComment({
-        ...context.repo,
-        comment_id: comment.id,
+        owner: context.repo.owner,
+        repo: context.repo.repo,
+        comment_id: comment.id
       });
     }
   }
 
+  // Create new comment
   const { data: newComment } = await octokit.rest.issues.createComment({
-    ...context.repo,
+    owner: context.repo.owner,
+    repo: context.repo.repo,
     issue_number: prNumber,
-    body: commentBody,
+    body: commentBody
   });
 
+  // eslint-disable-next-line no-console
   console.log(`Created new comment ID ${newComment.id}`);
 }
 
-async function updatePrDescription({
-  octokit,
-  context,
-  prNumber,
-  storybookUrl,
-  buildUrl,
-}: UpdatePrParams): Promise<void> {
-  const chromaticSection = `${MARKERS.DESCRIPTION.START}
-<hr />
+async function updatePrDescription(params: UpdatePrParams): Promise<void> {
+  const { octokit, context, prNumber, storybookUrl, buildUrl } = params;
 
-### 🎨 Chromatic Preview
+  const chromaticSection =
+    `${CHROMATIC_START_MARKER}\n` +
+    `<hr />\n\n` +
+    `### 🎨 Chromatic Preview\n\n` +
+    `- 📚 [View Storybook](${storybookUrl})\n` +
+    `- 🛠️ [View Build](${buildUrl})\n` +
+    `${CHROMATIC_END_MARKER}`;
 
-- 📚 [View Storybook](${storybookUrl})
-- 🛠️ [View Build](${buildUrl})
-${MARKERS.DESCRIPTION.END}`;
+  const { data: pullRequest } = (await octokit.rest.pulls.get({
+    owner: context.repo.owner,
+    repo: context.repo.repo,
+    pull_number: prNumber
+  })) as { data: PullRequest };
 
-  const { data: pullRequest } = await octokit.rest.pulls.get({
-    ...context.repo,
-    pull_number: prNumber,
-  });
+  let newBody = pullRequest.body || '';
 
-  let newBody = pullRequest.body || "";
-
-  const startIndex = newBody.indexOf(MARKERS.DESCRIPTION.START);
-  const endIndex = newBody.indexOf(MARKERS.DESCRIPTION.END);
+  // Remove old Chromatic section if it exists
+  const startIndex = newBody.indexOf(CHROMATIC_START_MARKER);
+  const endIndex = newBody.indexOf(CHROMATIC_END_MARKER);
 
   if (startIndex !== -1 && endIndex !== -1) {
-    newBody =
-      newBody.substring(0, startIndex).trim() +
-      newBody.substring(endIndex + MARKERS.DESCRIPTION.END.length).trim();
+    newBody = newBody.substring(0, startIndex).trim() + newBody.substring(endIndex + CHROMATIC_END_MARKER.length).trim();
   }
 
-  newBody = `${newBody.trim()}\n\n${chromaticSection}`;
+  // Add new Chromatic section
+  newBody = newBody.trim() + '\n\n' + chromaticSection;
 
+  // Update PR description
   await octokit.rest.pulls.update({
-    ...context.repo,
+    owner: context.repo.owner,
+    repo: context.repo.repo,
     pull_number: prNumber,
-    body: newBody,
+    body: newBody
   });
 
-  console.log("Updated PR description");
+  // eslint-disable-next-line no-console
+  console.log('Updated PR description');
 }
 
 export { updatePrComment, updatePrDescription, type UpdatePrParams };
