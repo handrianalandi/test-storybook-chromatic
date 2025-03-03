@@ -25,6 +25,8 @@ jobs:
         with:
           projectToken: ${{ secrets.CHROMATIC_PROJECT_TOKEN }}
           buildScriptName: build:chromatic-storybook
+      - name: Build Chromatic Action
+        run: cd .github/actions/chromatic && yarn build
       - name: Manage PR comments
         if: success() && github.event_name == 'pull_request'
         uses: ./.github/actions/chromatic
