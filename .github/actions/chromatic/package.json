@@ -1,8 +1,14 @@
 {
   "name": "chromatic",
   "packageManager": "yarn@4.5.0",
+  "scripts": {
+    "build": "tsc"
+  },
   "dependencies": {
     "@actions/core": "^1.11.1",
     "@actions/github": "^6.0.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.8.2"
   }
 }
