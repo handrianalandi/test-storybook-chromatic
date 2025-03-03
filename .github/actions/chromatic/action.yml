@@ -1,0 +1,15 @@
+name: "Chromatic PR Comment"
+description: "Posts a comment on the PR with Storybook and Build URLs."
+inputs:
+  github-token:
+    description: "GitHub token for authentication"
+    required: true
+  storybook-url:
+    description: "URL of the published Storybook"
+    required: true
+  build-url:
+    description: "URL of the Chromatic build"
+    required: true
+runs:
+  using: "node20"
+  main: 'dist/index.js'
